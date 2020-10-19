@@ -1,4 +1,4 @@
-#App features:
+# App features:
 show a list of flights (a flight having properties: no. of passengers:numeric, name: string, date of flight: date, isFull: boolean)
 add or edit flights
 authenticate user
