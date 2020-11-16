@@ -3,7 +3,7 @@ import {FlightProps} from "./FlightProps";
 import {getLogger} from "../core";
 
 const baseUrl = 'localhost:3000';
-const flightUrl = `http://${baseUrl}/flight`;
+const flightUrl = `http://${baseUrl}/api/flight`;
 
 const log = getLogger('flightApi');
 
