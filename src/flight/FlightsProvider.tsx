@@ -1,8 +1,9 @@
-import React, {useCallback, useEffect ,useReducer} from "react";
+import React, {useCallback, useContext, useEffect, useReducer} from "react";
 import {FlightProps} from "./FlightProps";
 import PropTypes from 'prop-types'
 import {getLogger} from "../core";
 import {createFlight, getFlights, newWebSocket, updateFlight} from "./FlightApi";
+import {AuthContext} from "../authentification";
 
 type SaveFlightFunction = (flight: FlightProps) => Promise<any>;
 
@@ -49,7 +50,7 @@ const reducer: (state: FlightsState, action: ActionProps) => FlightsState =
             case SAVE_FLIGHT_SUCCEEDED:
                 const flights = [...(state.flights || [])];
                 const flight = payload.flight;
-                const index = flights.findIndex(fl => fl.id === flight.id);
+                const index = flights.findIndex(fl => fl._id === flight._id);
                 if (index === -1) {
                     flights.splice(0, 0, flight);
                 } else {
@@ -69,13 +70,13 @@ interface FlightProviderProps {
 
 export const FlightContext = React.createContext<FlightsState>(initialState);
 
-
 export const FlightProvider: React.FC<FlightProviderProps> = ({children}) => {
+    const { token } = useContext(AuthContext);
     const [state, dispatch] = useReducer(reducer, initialState);
     const { flights, fetching, fetchingError, saving, savingError} = state;
-    useEffect(getFlightsEffect, []);
-    useEffect(wsEffect, []);
-    const saveFlight = useCallback<SaveFlightFunction>(saveFlightCallback, []);
+    useEffect(getFlightsEffect, [token]);
+    useEffect(wsEffect, [token]);
+    const saveFlight = useCallback<SaveFlightFunction>(saveFlightCallback, [token]);
     const value = { flights, fetching, fetchingError, saving, savingError, saveFlight };
     log('returns');
     return (
@@ -92,11 +93,13 @@ export const FlightProvider: React.FC<FlightProviderProps> = ({children}) => {
         }
 
         async function fetchFlights() {
-
+            if (!token?.trim()) {
+                return;
+            }
             try {
                 log('fetchFlights started');
                 dispatch({ type: FETCH_FLIGHTS_STARTED });
-                const flights = await getFlights();
+                const flights = await getFlights(token);
                 log('fetchFlights succeeded');
                 if (!canceled) {
                     dispatch({ type: FETCH_FLIGHTS_SUCCEEDED, payload: { flights } });
@@ -112,7 +115,7 @@ export const FlightProvider: React.FC<FlightProviderProps> = ({children}) => {
         try {
             log('saveFlight started');
             dispatch({ type: SAVE_FLIGHT_STARTED });
-            const savedFlight = await (flight.id ? updateFlight(flight) : createFlight(flight));
+            const savedFlight = await (flight._id ? updateFlight(token, flight) : createFlight(token, flight));
             log('saveFlight succeeded');
             dispatch({ type: SAVE_FLIGHT_SUCCEEDED, payload: { flight: savedFlight } });
         } catch (error) {
@@ -123,20 +126,23 @@ export const FlightProvider: React.FC<FlightProviderProps> = ({children}) => {
     function wsEffect() {
         let canceled = false;
         log('wsEffect - connecting');
-        const closeWebSocket = newWebSocket(message => {
-            if (canceled) {
-                return;
-            }
-            const { event, payload: { flight }} = message;
-            log(`ws message, flight ${event}`);
-            if (event === 'created' || event === 'updated') {
-                dispatch({ type: SAVE_FLIGHT_SUCCEEDED, payload: { flight } });
-            }
-        });
-        return () => {
-            log('wsEffect - disconnecting');
-            canceled = true;
-            closeWebSocket();
+        let closeWebSocket: () => void;
+        if (token?.trim()){
+            closeWebSocket = newWebSocket(token, message => {
+                if (canceled) {
+                    return;
+                }
+                const { type, payload: flight} = message;
+                log(`ws message, flight ${type}`);
+                if (type === 'created' || type === 'updated') {
+                    dispatch( {type: SAVE_FLIGHT_SUCCEEDED, payload: { flight }});
+                }
+            });
         }
+        return () => {
+          log('wsEffect- disconnecting');
+          canceled = true;
+          closeWebSocket?.();
+        };
     }
 }

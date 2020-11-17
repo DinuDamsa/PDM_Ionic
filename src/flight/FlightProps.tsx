@@ -1,5 +1,5 @@
 export interface FlightProps{
-    id?: string;
+    _id?: string;
     noPassengers?: number;
     name: string;
     dateOfFlight?: string;

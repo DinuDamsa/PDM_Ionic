@@ -1,6 +1,5 @@
-import {baseUrl, config, resolvePromiseWithLogs} from "../core";
 import axios from 'axios';
-
+import { baseUrl, config, resolvePromiseWithLogs } from '../core';
 
 const authUrl = `http://${baseUrl}/api/auth/login`;
 
