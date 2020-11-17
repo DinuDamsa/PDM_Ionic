@@ -8,7 +8,14 @@ import {
     IonHeader,
     IonFab,
     IonFabButton,
-    IonIcon, IonLoading, IonInfiniteScroll, IonInfiniteScrollContent, IonSearchbar, IonButton
+    IonIcon,
+    IonLoading,
+    IonInfiniteScroll,
+    IonInfiniteScrollContent,
+    IonSearchbar,
+    IonButton,
+    IonSelect,
+    IonSelectOption
 } from "@ionic/react";
 import {FlightContext} from "./FlightsProvider"
 import Flight from "./Flight";
@@ -27,6 +34,7 @@ const FlightsList: React.FC<RouteComponentProps> = ({history}) => {
     const [pos, setPos] = useState(20);
     const [flightsShowed, setFlightsShowed] = useState<FlightProps[]>([]);
     const [searchText, setSearchText] = useState('');
+    const [filter, setFilter] = useState<string | undefined>(undefined);
 
     useEffect(() => {
         if (flights?.length) {
@@ -53,6 +61,16 @@ const FlightsList: React.FC<RouteComponentProps> = ({history}) => {
     }
 
     useEffect(() => {
+        if (filter && flights) {
+            log("Filter value:", filter);
+            setFlightsShowed(flights.filter((flight) => flight.isFull ===  (filter === "true")).slice(0,20));
+        }
+        else if (flights){
+            setFlightsShowed(flights.slice(0,20));
+        }
+    }, [flights, filter]);
+
+    useEffect(() => {
         if (flights && searchText) {
             setFlightsShowed(flights.filter(flight => {
                 return flight.name.startsWith(searchText);
@@ -74,6 +92,11 @@ const FlightsList: React.FC<RouteComponentProps> = ({history}) => {
                 </IonToolbar>
             </IonHeader>
             <IonSearchbar value={searchText} onIonChange={e => setSearchText(e.detail.value!)} animated/>
+            <IonSelect value={filter} placeholder="Select isFull" onIonChange={e => setFilter(e.detail.value)}>
+                <IonSelectOption key="true" value="true">true</IonSelectOption>
+                <IonSelectOption key="false" value="false">false</IonSelectOption>
+                <IonSelectOption key="none" value="">all</IonSelectOption>
+            </IonSelect>
             <IonContent>
                 <IonLoading isOpen={fetching} message="Fetching flights" />
                 {flightsShowed && (
@@ -84,7 +107,7 @@ const FlightsList: React.FC<RouteComponentProps> = ({history}) => {
                                 } />)} )}
                     </IonList>
                 )}
-                <IonInfiniteScroll threshold="100px" disabled={disableInfiniteScroll}
+                <IonInfiniteScroll threshold="50px" disabled={disableInfiniteScroll}
                                    onIonInfinite={(e: CustomEvent<void>) => searchNext(e)}>
                     <IonInfiniteScrollContent
                         loadingSpinner="bubbles"
