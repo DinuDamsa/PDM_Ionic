@@ -8,7 +8,7 @@ import {
     IonHeader,
     IonFab,
     IonFabButton,
-    IonIcon, IonLoading, IonInfiniteScroll, IonInfiniteScrollContent
+    IonIcon, IonLoading, IonInfiniteScroll, IonInfiniteScrollContent, IonSearchbar
 } from "@ionic/react";
 import {FlightContext} from "./FlightsProvider"
 import Flight from "./Flight";
@@ -24,6 +24,7 @@ const FlightsList: React.FC<RouteComponentProps> = ({history}) => {
     const [disableInfiniteScroll, setDisableInfiniteScroll] = useState<boolean>(false);
     const [pos, setPos] = useState(20);
     const [flightsShowed, setFlightsShowed] = useState<FlightProps[]>([]);
+    const [searchText, setSearchText] = useState('');
 
     useEffect(() => {
         if (flights?.length) {
@@ -42,6 +43,16 @@ const FlightsList: React.FC<RouteComponentProps> = ({history}) => {
         ($event.target as HTMLIonInfiniteScrollElement).complete();
     }
 
+    useEffect(() => {
+        if (flights) {
+            setFlightsShowed(flights.filter(flight => {
+                    if (searchText) {
+                        return flight.name.startsWith(searchText);
+                    } else {
+                        return true;
+                    }
+                }))}},[flights, searchText] );
+
     log('render');
     return (
         <IonPage>
@@ -50,6 +61,7 @@ const FlightsList: React.FC<RouteComponentProps> = ({history}) => {
                     <IonTitle>Flight App</IonTitle>
                 </IonToolbar>
             </IonHeader>
+            <IonSearchbar value={searchText} onIonChange={e => setSearchText(e.detail.value!)} animated/>
             <IonContent>
                 <IonLoading isOpen={fetching} message="Fetching flights" />
                 {flights && (
@@ -63,6 +75,7 @@ const FlightsList: React.FC<RouteComponentProps> = ({history}) => {
                 <IonInfiniteScroll threshold="150px" disabled={disableInfiniteScroll}
                                    onIonInfinite={(e: CustomEvent<void>) => searchNext(e)}>
                     <IonInfiniteScrollContent
+                        loadingSpinner="bubbles"
                         loadingText="Loading more flights...">
                     </IonInfiniteScrollContent>
                 </IonInfiniteScroll>
