@@ -8,19 +8,21 @@ import {
     IonHeader,
     IonFab,
     IonFabButton,
-    IonIcon, IonLoading, IonInfiniteScroll, IonInfiniteScrollContent, IonSearchbar
+    IonIcon, IonLoading, IonInfiniteScroll, IonInfiniteScrollContent, IonSearchbar, IonButton
 } from "@ionic/react";
 import {FlightContext} from "./FlightsProvider"
 import Flight from "./Flight";
 import {getLogger} from "../core";
-import {RouteComponentProps} from "react-router";
+import {Redirect, RouteComponentProps} from "react-router";
 import {add} from "ionicons/icons";
 import {FlightProps} from "./FlightProps";
+import {AuthContext} from "../authentification";
 
 const log = getLogger('FlightList');
 
 const FlightsList: React.FC<RouteComponentProps> = ({history}) => {
     const {flights, fetching, fetchingError} = useContext(FlightContext);
+    const { logout } = useContext(AuthContext);
     const [disableInfiniteScroll, setDisableInfiniteScroll] = useState<boolean>(false);
     const [pos, setPos] = useState(20);
     const [flightsShowed, setFlightsShowed] = useState<FlightProps[]>([]);
@@ -30,10 +32,12 @@ const FlightsList: React.FC<RouteComponentProps> = ({history}) => {
         if (flights?.length) {
             setFlightsShowed(flights.slice(0, 20));
         }
+
     }, [flights]);
 
     function searchNext($event: CustomEvent<void>) {
         log('More flights are displayed');
+        console.log(flightsShowed);
         if (flights && pos < flights.length) {
             setFlightsShowed([...flightsShowed, ...flights.slice(pos, pos + 20)]);
             setPos(pos + 20);
@@ -43,15 +47,20 @@ const FlightsList: React.FC<RouteComponentProps> = ({history}) => {
         ($event.target as HTMLIonInfiniteScrollElement).complete();
     }
 
+    const handleLogout = () => {
+        logout?.();
+        return <Redirect to={{ pathname: '/login'}}/>;
+    }
+
     useEffect(() => {
-        if (flights) {
+        if (flights && searchText) {
             setFlightsShowed(flights.filter(flight => {
-                    if (searchText) {
-                        return flight.name.startsWith(searchText);
-                    } else {
-                        return true;
-                    }
-                }))}},[flights, searchText] );
+                return flight.name.startsWith(searchText);
+            }).slice(0,20)
+        )}
+        else if (flights){
+            setFlightsShowed(flights.slice(0,20));
+        }},[flights, searchText] );
 
     log('render');
     return (
@@ -59,12 +68,15 @@ const FlightsList: React.FC<RouteComponentProps> = ({history}) => {
             <IonHeader>
                 <IonToolbar>
                     <IonTitle>Flight App</IonTitle>
+                    {/*<IonFab vertical="top" horizontal="end" slot="fixed">*/}
+                        <IonButton onClick={handleLogout}  >Logout</IonButton>
+                    {/*</IonFab>*/}
                 </IonToolbar>
             </IonHeader>
             <IonSearchbar value={searchText} onIonChange={e => setSearchText(e.detail.value!)} animated/>
             <IonContent>
                 <IonLoading isOpen={fetching} message="Fetching flights" />
-                {flights && (
+                {flightsShowed && (
                     <IonList>
                         {flightsShowed.map(({_id,name:text,noPassengers ,dateOfFlight,isFull}) =>
                         {
@@ -72,7 +84,7 @@ const FlightsList: React.FC<RouteComponentProps> = ({history}) => {
                                 } />)} )}
                     </IonList>
                 )}
-                <IonInfiniteScroll threshold="150px" disabled={disableInfiniteScroll}
+                <IonInfiniteScroll threshold="100px" disabled={disableInfiniteScroll}
                                    onIonInfinite={(e: CustomEvent<void>) => searchNext(e)}>
                     <IonInfiniteScrollContent
                         loadingSpinner="bubbles"
