@@ -3,12 +3,12 @@ import { FlightProps } from "./FlightProps"
 import {IonItem, IonLabel} from "@ionic/react";
 
 interface FlightPropsWrapper extends FlightProps{
-    onEdit: (id?: string) =>void;
+    onEdit: (_id?: string) =>void;
 }
 
-const Flight: React.FC<FlightPropsWrapper> = ({id,noPassengers,name,dateOfFlight,isFull, onEdit})=>{
+const Flight: React.FC<FlightPropsWrapper> = ({_id,noPassengers,name,dateOfFlight,isFull, onEdit})=>{
     return (
-        <IonItem onClick={() => onEdit(id)}>
+        <IonItem onClick={() => {onEdit(_id)}}>
             <IonLabel>
                 {name}
             </IonLabel>

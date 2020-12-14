@@ -17,9 +17,6 @@ import {FlightContext} from './FlightsProvider';
 import {RouteComponentProps} from 'react-router';
 import {FlightProps} from './FlightProps';
 
-
-
-
 const log = getLogger('FlightEdit');
 
 interface FlightEditProps extends RouteComponentProps<{
@@ -37,13 +34,13 @@ const FlightEdit: React.FC<FlightEditProps> = ({ history, match }) => {
     useEffect(() => {
         log('useEffect');
         const routeId = match.params.id || '';
-        const flight = flights?.find(fl => fl.id === routeId);
+        const flight = flights?.find(fl => fl._id === routeId);
         setFlight(flight);
+
         if (flight) {
             setName(flight.name);
             setNoPassengers(flight.noPassengers || 0);
             setIsFull(flight.isFull || false);
-            // @ts-ignore
             setDateOfFlight(flight.dateOfFlight || '2020-10-10 20:10');
         }
     }, [match.params.id, flights]);

@@ -2,6 +2,9 @@ import React from 'react';
 import { Redirect, Route } from 'react-router-dom';
 import { IonApp, IonRouterOutlet } from '@ionic/react';
 import { IonReactRouter } from '@ionic/react-router';
+import {FlightList, FlightEdit} from './flight'
+import {FlightProvider} from "./flight/FlightsProvider";
+import {AuthProvider, Login, PrivateRoute} from "./authentification";
 
 /* Core CSS required for Ionic components to work properly */
 import '@ionic/react/css/core.css';
@@ -21,22 +24,24 @@ import '@ionic/react/css/display.css';
 
 /* Theme variables */
 import './theme/variables.css';
-import {FlightList, FlightEdit} from './flight'
-import {FlightProvider} from "./flight/FlightsProvider";
 
 const App: React.FC = () => (
   <IonApp>
       <FlightProvider>
           <IonReactRouter>
               <IonRouterOutlet>
-                  <Route path="/flights" component={FlightList} exact={true} />
-                  <Route path="/flight" component={FlightEdit} exact={true} />
-                  <Route path="/flight/:id" component={FlightEdit} exact={true} />
-                  <Route exact path="/" render={() => <Redirect to="/flights" />} />
+                  <AuthProvider>
+                      <Route path='/login' component={Login} exact={true}/>
+                      <FlightProvider>
+                          <PrivateRoute path="/flights" component={FlightList} exact={true} />
+                          <PrivateRoute path="/flight" component={FlightEdit} exact={true} />
+                          <PrivateRoute path="/flight/:id" component={FlightEdit} exact={true} />
+                      </FlightProvider>
+                      <Route exact path="/" render={() => <Redirect to="/flights" />} />
+                  </AuthProvider>
               </IonRouterOutlet>
           </IonReactRouter>
       </FlightProvider>
-
   </IonApp>
 );
 
