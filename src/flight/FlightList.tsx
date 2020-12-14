@@ -24,24 +24,34 @@ import {Redirect, RouteComponentProps} from "react-router";
 import {add} from "ionicons/icons";
 import {FlightProps} from "./FlightProps";
 import {AuthContext} from "../authentification";
+import {useNetwork} from "./useNetwork";
+import {useAppState} from "./useAppState";
 
 const log = getLogger('FlightList');
 
 const FlightsList: React.FC<RouteComponentProps> = ({history}) => {
-    const {flights, fetching, fetchingError} = useContext(FlightContext);
+    const {flights, fetching, fetchingError, uploadOnServer } = useContext(FlightContext);
     const { logout } = useContext(AuthContext);
     const [disableInfiniteScroll, setDisableInfiniteScroll] = useState<boolean>(false);
     const [pos, setPos] = useState(20);
     const [flightsShowed, setFlightsShowed] = useState<FlightProps[]>([]);
     const [searchText, setSearchText] = useState('');
     const [filter, setFilter] = useState<string | undefined>(undefined);
-
+    const { networkStatus } = useNetwork();
+    const { appState } = useAppState();
     useEffect(() => {
         if (flights?.length) {
             setFlightsShowed(flights.slice(0, 20));
         }
 
     }, [flights]);
+
+    useEffect(() => {
+        if(networkStatus.connected) {
+            console.log('connected')
+            uploadOnServer && uploadOnServer();
+        }
+    },[networkStatus, uploadOnServer]);
 
     function searchNext($event: CustomEvent<void>) {
         log('More flights are displayed');
@@ -86,11 +96,11 @@ const FlightsList: React.FC<RouteComponentProps> = ({history}) => {
             <IonHeader>
                 <IonToolbar>
                     <IonTitle>Flight App</IonTitle>
-                    {/*<IonFab vertical="top" horizontal="end" slot="fixed">*/}
                         <IonButton onClick={handleLogout}  >Logout</IonButton>
-                    {/*</IonFab>*/}
                 </IonToolbar>
             </IonHeader>
+            <div>Network status is {JSON.stringify(networkStatus)}</div>
+            <div>App status is {JSON.stringify(appState)}</div>
             <IonSearchbar value={searchText} onIonChange={e => setSearchText(e.detail.value!)} animated/>
             <IonSelect value={filter} placeholder="Select isFull" onIonChange={e => setFilter(e.detail.value)}>
                 <IonSelectOption key="true" value="true">true</IonSelectOption>
@@ -114,7 +124,6 @@ const FlightsList: React.FC<RouteComponentProps> = ({history}) => {
                         loadingText="Loading more flights...">
                     </IonInfiniteScrollContent>
                 </IonInfiniteScroll>
-
                 {fetchingError && (
                     <div>{fetchingError.message || 'Failed to fetch flights'}</div>
                 )}
